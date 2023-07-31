@@ -1,0 +1,47 @@
+package SimpleApiTestingExamples.SimpleApiTestingExamples;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
+
+import org.json.JSONObject;
+import org.testng.Assert;
+import org.testng.annotations.Test;
+
+import io.restassured.response.Response;
+
+
+public class JiraApiTest {
+	String sessionID;
+	@Test
+	public void createSessionIdInJira()
+	{
+		/*
+		 * JSONObject json=new JSONObject(); json.put("username","admin");
+		 * json.put("password","P@$$w0rd");
+		 */
+		Response resp=given()
+		.header("Content-Type","application/json")
+		.body("{\r\n    \"username\": \"admin\",\r\n    \"password\": \"P@$$w0rd\"\r\n}")
+		.post("http://192.168.25.30:8080/rest/auth/1/session");
+		int ActualStatusCode=resp.getStatusCode();
+		System.out.println("Statuscode: "+ActualStatusCode);
+		Assert.assertEquals(ActualStatusCode, 200);
+		System.out.println(resp.getBody().jsonPath().prettify());
+		System.out.println(resp.getCookies());
+		sessionID=resp.getCookies().get("JSESSIONID");
+	}
+	
+	@Test
+	public void createStoryInJira()
+	{
+		given()
+		.header("Content-Type","application/json")
+		.cookie("JSESSIONID", sessionID)
+		.body("{\n    \"fields\": {\n       \"project\":\n       {\n          \"id\": \"10704\"\n       },\n       \"summary\": \"Story Created from Rest Assured.\",\n       \"description\": \"Creating story using Postman\",\n       \"issuetype\": {\n          \"id\": \"10002\"\n       }\n   }\n}")
+		.when().
+		post("http://192.168.25.30:8080/rest/api/2/issue").
+		then().
+		assertThat().
+		statusCode(201);
+		
+	}
+}
